@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>穿过长廊回声 | 青少年社交焦虑多模态测量</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <style>
+        :root {
+              /* 基底 - 深空靛黑与暗区青灰 */
+            --bg-marshmallow: #03050B;      /* 主背景：接近绝对黑，带极深蓝 */
+            --bg-cream: #0E1320;            /* 次级背景：微透紫灰，模拟城市夜空 */
+
+            /* 主霓虹色 - 青、品、紫、黄（平行分类，无标识错误） */
+            --mint-ice: #0FF0FE;            /* 电光青：核心动作色，高亮与边缘 */
+            --mint-soft: #0FF0FE22;         /* 半透明青：光晕、悬浮、玻璃态 */
+            --peach-mousse: #ff66a3;      /* 热品红：警示、焦点、故障干扰（原桃色→霓虹品红）*/
+            --lavender-milk: #cdade0;     /* 赛博紫：数据流、全息投影（原淡紫→高饱和紫罗兰）*/
+            --lemon-sherbet: #FFEA00;       /* 酸橙黄：能量核心、提示光效 */
+
+            /* 文本层级 - 冷白与数据灰 */
+            --text-charcoal: #F0F4FF;       /* 主要文本：冷白带蓝，增强可读性 */
+            --text-sage: #8B9BB4;           /* 次要文本：低饱和蓝灰，科技感注释 */
+
+            /* 边框/分割线 - 暗光青灰 */
+            --border-almond: #2A2F42;       /* 结构线：冷峻深灰，可搭配发光效果 */
+
+            /* 字体系统保持不变，适配终端与无衬线 */
+            --font-mono: 'IBM Plex Mono', monospace;
+            --font-sans: 'Inter', sans-serif;
+
+            /* 动效曲线 - 原参数已硬朗，保留 */
+            --ease-out: cubic-bezier(0.25, 1, 0.5, 1);
+
+            /* 阴影系统 - 强化故障偏移感 */
+            --shadow-soft: 0 0 0 2px #000, 8px 8px 0 0 var(--mint-ice);   /* 青霓虹重影 */
+            --shadow-hard: 6px 6px 0 0 #FF2079;                           /* 品红硬偏移，故障风 */
+
+            /* 数据高亮发光效果 */
+            --glow-mint: 0 0 10px var(--mint-ice), 0 0 20px var(--mint-ice), 0 0 30px var(--mint-ice);
+
+
+            
+            /* 间距系统 */
+            --space-xs: 0.5rem;
+            --space-sm: 1rem;
+            --space-md: 1.5rem;
+            --space-lg: 2.5rem;
+            --space-xl: 4rem;
+            --space-2xl: 6rem;
+            --space-3xl: 8rem;
+            
+            /* 字体层级 */
+            --text-xs: 0.75rem;
+            --text-sm: 0.875rem;
+            --text-base: 1rem;
+            --text-lg: 1.125rem;
+            --text-xl: 1.5rem;
+            --text-2xl: 2rem;
+            --text-3xl: 2.5rem;
+            --text-4xl: 3.5rem;
+            --text-hero: clamp(3.5rem, 8vw, 7rem);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; background: var(--bg-marshmallow); }
+        body { 
+            font-family: var(--font-sans); 
+            color: var(--text-charcoal); 
+            line-height: 1.7;
+            font-size: var(--text-base);
+            overflow-x: hidden; 
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* WebGL 脉冲网格背景 */
+        #webgl-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+            background: var(--bg-marshmallow);
+        }
+
+        nav {
+            position: fixed; top: 0; width: 100%; height: 80px;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 60px; z-index: 1000;
+            background: rgba(10, 10, 10, 0.95); backdrop-filter: blur(20px);
+            border-bottom: 3px solid var(--border-almond);
+        }
+        .nav-logo { font-weight: 700; font-size: var(--text-xl); color: var(--text-charcoal); letter-spacing: -0.02em; }
+        .nav-logo span { color: var(--mint-ice); }
+        .nav-links { display: flex; gap: 40px; }
+        .nav-links a {
+            font-family: var(--font-mono); 
+            font-size: var(--text-xs); 
+            text-decoration: none;
+            color: var(--text-sage); 
+            font-weight: 500; 
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            position: relative; 
+            padding-bottom: 6px;
+            transition: color 0.3s var(--ease-out);
+        }
+        .nav-links a:hover { color: var(--text-charcoal); }
+        .nav-links a::after {
+            content: ""; position: absolute; bottom: 0; left: 0; width: 0; height: 2px;
+            background: var(--peach-mousse); transition: 0.4s var(--ease-out);
+        }
+        .nav-links a:hover::after { width: 100%; }
+
+        .hero {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            align-items: start;
+            min-height: 100vh;
+            padding: 0 5% 0 8%;
+            position: relative;
+            z-index: 5;
+            overflow-x: clip;
+            background: transparent;
+        }
+
+        .hero-content {
+            grid-column: 1 / 2;
+            margin-top: 25vh;
+            transform: skewY(-0.5deg);
+            max-width: 680px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .hero-label {
+            font-family: var(--font-mono);
+            color: var(--text-sage);
+            letter-spacing: 0.2em;
+            font-size: 0.65rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            display: block;
+            margin-bottom: var(--space-sm);
+        }
+
+        .hero-label::before {
+            content: '//';
+            color: var(--peach-mousse);
+            margin-right: 0.5em;
+        }
+
+        .hero-title-main {
+            font-size: clamp(3rem, 8vw, 6rem);
+            font-weight: 700;
+            line-height: 1.05;
+            letter-spacing: -0.03em;
+            margin-bottom: var(--space-sm);
+            color: var(--text-charcoal);
+        }
+
+        .hero-title-sub {
+            font-size: clamp(1.4rem, 2.5vw, 1.8rem);
+            font-weight: 500;
+            line-height: 1.4;
+            letter-spacing: 0.02em;
+            color: var(--text-sage);
+            margin-bottom: var(--space-xl);
+            max-width: 90%;
+        }
+
+        .hero-desc {
+            color: var(--text-sage);
+            font-size: 1rem;
+            font-weight: 400;
+            line-height: 1.8;
+            max-width: 480px;
+            border-left: 2px solid var(--border-almond);
+            padding-left: var(--space-md);
+            margin-top: var(--space-xl);
+        }
+
+        .hero-desc strong {
+            color: var(--text-charcoal);
+            font-weight: 600;
+        }
+
+        .hero-glitch-bar {
+            display: none;
+        }
+
+        .hero::after {
+            content: '';
+            grid-column: 2 / 3;
+            background-image: 
+                linear-gradient(var(--border-almond) 1px, transparent 1px),
+                linear-gradient(90deg, var(--border-almond) 1px, transparent 1px);
+            background-size: 30px 30px;
+            opacity: 0.2;
+            pointer-events: none;
+            height: 100%;
+            width: 100%;
+            margin-top: 10vh;
+        }
+
+        @media (max-width: 768px) {
+            .hero {
+                grid-template-columns: 1fr;
+                padding: 0 6%;
+            }
+            .hero-content {
+                grid-column: 1;
+                margin-top: 20vh;
+                transform: none;
+            }
+            .hero-desc {
+                max-width: 100%;
+                text-align: left;
+                border-right: none;
+                border-left: 1px dashed var(--border-almond);
+                padding-left: 1rem;
+                margin-left: 0;
+            }
+            .hero::after {
+                display: none;
+            }
+            .hero-glitch-bar {
+                width: 90%;
+                bottom: 10%;
+            }
+        }
+
+        /* 阶梯递进区样式 */
+        .ladder-section { padding: var(--space-3xl) 8%; position: relative; z-index: 5; }
+        .section-header { text-align: center; margin-bottom: var(--space-2xl); }
+        .section-header h2 { 
+            font-size: var(--text-3xl); 
+            letter-spacing: -0.02em; 
+            font-weight: 600;
+            line-height: 1.2;
+        }
+        .section-header p { 
+            color: var(--text-sage); 
+            margin-top: var(--space-sm);
+            font-size: var(--text-lg);
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+            line-height: 1.6;
+        }
+        
+        .ladder-grid {
+            max-width: 1000px; 
+            margin: 0 auto; 
+            position: relative;
+            border-left: 2px dashed var(--border-almond); 
+            padding-left: var(--space-xl);
+        }
+
+        /* 引导线光点流动 */
+        .flow-dot {
+            position: absolute; left: -5px; width: 8px; height: 8px;
+            background: var(--mint-ice); border-radius: 50%;
+            box-shadow: 0 0 12px var(--mint-ice);
+            animation: flowDown 10s linear infinite;
+        }
+        @keyframes flowDown { 0% { top: 0; } 100% { top: 100%; } }
+
+        .ladder-row {
+            background: var(--bg-cream); 
+            border-radius: 28px;
+            padding: var(--space-xl); 
+            margin-bottom: var(--space-2xl); 
+            border: 1px solid var(--border-almond);
+            display: grid; 
+            grid-template-columns: 1fr 1.1fr; 
+            gap: var(--space-xl); 
+            align-items: center;
+            transition: 0.6s var(--ease-out); 
+            opacity: 0; 
+            transform: translateX(-40px);
+            box-shadow: var(--shadow-soft);
+        }
+        .ladder-row.visible { opacity: 1; transform: translateX(0); }
+        .ladder-row:hover {
+            transform: translateX(15px); border-color: var(--mint-ice);
+            background: var(--mint-soft);
+        }
+
+        .stage-info { position: relative; }
+        .stage-badge {
+            width: 48px; height: 48px; border-radius: 12px;
+            background: var(--mint-soft); color: var(--mint-ice);
+            display: flex; align-items: center; justify-content: center;
+            font-family: var(--font-mono); font-weight: 700; margin-bottom: 20px;
+            border: 1px solid var(--mint-ice);
+        }
+        .stage-info h3 { 
+            font-size: var(--text-xl); 
+            margin-bottom: var(--space-sm);
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            line-height: 1.3;
+        }
+        .stage-info p { 
+            color: var(--text-sage); 
+            font-size: var(--text-base); 
+            margin-bottom: var(--space-md);
+            line-height: 1.7;
+            max-width: 45ch;
+        }
+        .stage-tag {
+            font-family: var(--font-mono); 
+            font-size: var(--text-xs); 
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-weight: 500;
+        }
+
+        .stage-image-container {
+            width: 100%; border-radius: 20px; overflow: hidden;
+            border: 1px solid var(--border-almond); background: var(--bg-marshmallow);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.03);
+        }
+        .stage-img {
+            width: 100%; height: auto; display: block;
+            transition: 1.2s var(--ease-out);
+            clip-path: inset(0 100% 0 0); /* 初始隐藏 */
+        }
+        .ladder-row.visible .stage-img { clip-path: inset(0 0 0 0); }
+
+        /* 数据展示区 */
+        .data-section { 
+            display: grid; 
+            grid-template-columns: 38% 62%; 
+            background: var(--bg-marshmallow); 
+            z-index: 5; 
+            position: relative; 
+        }
+        .data-sticky { 
+            padding: var(--space-2xl) 10%; 
+            position: sticky; 
+            top: 80px; 
+            height: calc(100vh - 80px); 
+        }
+        .data-sticky h2 {
+            font-size: var(--text-3xl);
+            letter-spacing: -0.02em;
+            font-weight: 600;
+            line-height: 1.2;
+        }
+        .data-sticky p {
+            margin-top: var(--space-md);
+            color: var(--text-sage);
+            font-size: var(--text-lg);
+            line-height: 1.7;
+            max-width: 40ch;
+        }
+        .data-scroll { 
+            padding: var(--space-2xl) var(--space-xl); 
+            background: #2c2c2c; 
+            border-left: 3px solid var(--border-almond); 
+        }
+        
+        .data-visual-box {
+            background: #2c2c2c; 
+            border: 3px solid var(--border-almond);
+            border-radius: 16px; 
+            padding: var(--space-xl); 
+            margin-bottom: var(--space-xl);
+            box-shadow: 6px 6px 0 0 var(--mint-ice); 
+            transition: 0.5s var(--ease-out);
+            opacity: 0; 
+            transform: translateY(40px);
+        }
+        .data-visual-box:hover {
+            box-shadow: 8px 8px 0 0 var(--peach-mousse);
+            border-color: var(--peach-mousse);
+        }
+        .data-visual-box.drawn { opacity: 1; transform: translateY(0); }
+        .data-visual-box h3 {
+            font-size: var(--text-lg);
+            font-weight: 600;
+            margin-bottom: var(--space-md);
+            letter-spacing: -0.01em;
+        }
+        .data-visual-box > p {
+            margin-top: var(--space-md);
+            font-size: var(--text-sm);
+            color: var(--text-sage);
+            line-height: 1.6;
+        }
+
+        /* 演示区域 */
+        .demo-section {
+            padding: var(--space-3xl) 8%;
+            background: var(--bg-marshmallow);
+            position: relative;
+            z-index: 5;
+        }
+        .demo-container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .demo-header {
+            text-align: center;
+            margin-bottom: var(--space-xl);
+        }
+        .demo-header .badge {
+            font-family: var(--font-mono);
+            font-size: var(--text-xs);
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: var(--peach-mousse);
+            font-weight: 600;
+            display: block;
+            margin-bottom: var(--space-md);
+        }
+        .demo-header h2 {
+            font-size: var(--text-2xl);
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            margin-bottom: var(--space-sm);
+        }
+        .demo-header p {
+            color: var(--text-sage);
+            font-size: var(--text-base);
+            line-height: 1.7;
+            max-width: 50ch;
+            margin: 0 auto;
+        }
+        .video-wrapper {
+            margin-top: var(--space-xl);
+        }
+        .data-img {
+            width: 100%;
+            height: auto;
+            display: block;
+            border-radius: 12px;
+        }
+
+        /* 页脚 */
+        footer { 
+            padding: var(--space-xl) 8%; 
+            border-top: 3px solid var(--border-almond); 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            color: var(--text-sage); 
+            font-size: var(--text-sm);
+            background: var(--bg-marshmallow);
+        }
+        .footer-version {
+            font-family: var(--font-mono);
+            font-size: var(--text-xs);
+            letter-spacing: 0.1em;
+        }
+
+        /* 数据高亮发光效果 - 用于突出学术数据如 300+ 和 SEM */
+        .highlight-data {
+            color: var(--mint-ice);
+            font-family: var(--font-mono);
+            font-weight: 700;
+            text-shadow: 0 0 10px var(--mint-ice), 0 0 20px var(--mint-ice);
+            font-size: 1.05em;
+        }
+    </style>
+</head>
+<body>
+
+<nav>
+    <div class="nav-logo">穿过长廊回声<span>.</span></div>
+    <div class="nav-links">
+        <a href="#hero">首页</a>
+        <a href="#intro">项目简介</a>
+        <a href="#theory">理论映射</a>
+        <a href="#sample">实证规模</a>
+        <a href="#valid">科学校验</a>
+        <a href="#innovations">核心创新</a>
+        <a href="#architecture">系统架构</a>
+        <a href="#ladder">阶梯·场景</a>
+        <a href="#data">数据·报告</a>
+        <a href="#demo">演示</a>
+    </div>
+</nav>
+
+<div id="webgl-bg"></div>
+
+<section id="hero" class="hero">
+    <div class="hero-content">
+        <span class="hero-label">Multi-Level Social Stressor</span>
+        <h1 class="hero-title-main">穿过长廊回声</h1>
+        <h2 class="hero-title-sub">基于严肃游戏的<br>青少年社交焦虑测评干预系统</h2>
+        <p class="hero-desc">
+            每一级台阶，都是一次对内心边界的试探。<br>
+            从行为表征到心理特质，我们用多模态数据重构社交焦虑的高生态识别工具。
+        </p>
+    </div>
+    <div class="hero-glitch-bar"></div>
+</section>
+
+<section id="intro" class="ladder-section" style="background: var(--bg-cream);">
+    <div class="part1-intro" style="display: flex; justify-content: space-between; gap: var(--space-xl); align-items: flex-start;">
+        <div class="main-text" style="flex: 1.5;">
+            <span class="hero-label" style="text-align: left;">Project Abstract</span>
+            <h2 style="font-size: var(--text-3xl); margin-bottom: var(--space-md);">打破传统，<br>在自然状态下捕捉社交真实。</h2>
+            <p style="color: var(--text-sage); font-size: var(--text-lg);">本项目开发了一套基于严肃游戏的青少年社交焦虑多模态动态测量系统。针对传统自陈量表存在的主观偏差与生态效度不足，我们同步采集语音、眼动、生理及行为等多模态数据，实现<span style="color: var(--mint-ice);">"测量即干预"</span>的闭环设计。</p>
+        </div>
+        <div class="side-tags" style="flex: 1; display: flex; flex-direction: column; gap: var(--space-sm);">
+            <div style="padding: var(--space-md); border: 3px solid var(--border-almond); border-radius: 16px; background: var(--bg-marshmallow);">
+                <span class="stage-tag" style="color: var(--mint-ice); display: block;">Multimodal | 多模态采集</span>
+            </div>
+            <div style="padding: var(--space-md); border: 3px solid var(--border-almond); border-radius: 16px; background: var(--bg-marshmallow);">
+                <span class="stage-tag" style="color: var(--peach-mousse); display: block;">Serious Game | 严肃游戏载体</span>
+            </div>
+            <div style="padding: var(--space-md); border: 3px solid var(--border-almond); border-radius: 16px; background: var(--bg-marshmallow);">
+                <span class="stage-tag" style="color: var(--lavender-milk); display: block;">Closed-loop | 测量即干预</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Part 2: 设计依据与验证方式 -->
+<section id="theory" class="ladder-section">
+    <div class="section-header">
+        <span class="hero-label">Theoretical Mapping</span>
+        <h2>设计依据与验证方式</h2>
+    </div>
+    
+    <div class="ladder-grid" style="border-left: 3px solid var(--border-almond);">
+        <!-- 01 理论转化 -->
+        <div class="logic-step" style="margin-bottom: var(--space-2xl); padding-left: var(--space-lg); position: relative;">
+            <div style="position: absolute; left: -9px; top: 0; width: 16px; height: 16px; background: var(--mint-ice); border-radius: 50%; border: 3px solid var(--bg-marshmallow); box-shadow: 0 0 10px var(--mint-ice);"></div>
+            <h3 style="font-family: var(--font-mono); color: var(--mint-ice); margin-bottom: var(--space-md); font-size: var(--text-lg);">01 / 理论转化：维度解构与场景映射</h3>
+            <p style="max-width: 70ch; color: var(--text-charcoal); line-height: 1.9; margin-bottom: var(--space-md);">
+                系统深度融合<strong style="color: var(--mint-ice);">社交焦虑认知模型（CAM）</strong>与<strong style="color: var(--mint-ice);">应激—应对交互理论</strong>。我们对<span class="highlight-data">负性评价恐惧 (FNE)</span>与<span class="highlight-data">社交回避苦恼 (SAD)</span>等经典量表进行深度维度解构，将其转化为游戏中的压力梯度变量。
+            </p>
+            <p style="max-width: 70ch; color: var(--text-sage); line-height: 1.8;">
+                通过设计<span style="color: var(--peach-mousse); font-weight: 600;">"静息基线、基础选择、进阶互动、动态决策、评价恐惧、社交邀约"</span>六大典型情境，实现了从静态文字题项到动态心理诱发场景的科学转化，确保测评逻辑具备严谨的心理学根基。
+            </p>
+        </div>
+    </div>
+</section>
+
+<section id="sample" class="ladder-section" style="background: var(--bg-cream);">
+    <div class="ladder-grid" style="border-left: 3px solid var(--peach-mousse);">
+        <!-- 02 实证规模 -->
+        <div class="logic-step" style="margin-bottom: var(--space-2xl); padding-left: var(--space-lg); position: relative;">
+            <div style="position: absolute; left: -9px; top: 0; width: 16px; height: 16px; background: var(--peach-mousse); border-radius: 50%; border: 3px solid var(--bg-marshmallow); box-shadow: 0 0 10px var(--peach-mousse);"></div>
+            <h3 style="font-family: var(--font-mono); color: var(--peach-mousse); margin-bottom: var(--space-md); font-size: var(--text-lg);">02 / 实证规模：<span class="highlight-data">300+</span> 样本与探索性构建</h3>
+            <p style="max-width: 70ch; color: var(--text-charcoal); line-height: 1.9; margin-bottom: var(--space-md);">
+                项目基于 <span class="highlight-data">300名以上青少年</span> 的真实测试数据构建了多模态实证数据库。在场景设计前期，我们广泛采集了<span style="color: var(--lavender-milk); font-weight: 600;">社交回避及苦恼量表 (SADS)</span>、<span style="color: var(--lavender-milk); font-weight: 600;">儿童社交焦虑量表 (SASC)</span>及<span style="color: var(--lavender-milk); font-weight: 600;">青少年自我评价量表</span>等多维度数据。
+            </p>
+            <p style="max-width: 70ch; color: var(--text-sage); line-height: 1.8;">
+                通过对这些海量样本进行<span style="color: var(--mint-ice); font-weight: 500;">探索性分析 (Exploratory Analysis)</span>，我们识别出影响青少年社交焦虑的关键行为特征词，并以此为底层数据支撑，逆向指导虚拟社交情境的压力参数设定，确保了系统对真实社交行为的高预测力。
+            </p>
+        </div>
+    </div>
+</section>
+
+<section id="valid" class="ladder-section">
+    <div class="ladder-grid" style="border-left: 3px solid var(--lavender-milk);">
+        <!-- 03 科学验证 -->
+        <div class="logic-step" style="padding-left: var(--space-lg); position: relative;">
+            <div style="position: absolute; left: -9px; top: 0; width: 16px; height: 16px; background: var(--lavender-milk); border-radius: 50%; border: 3px solid var(--bg-marshmallow); box-shadow: 0 0 10px var(--lavender-milk);"></div>
+            <h3 style="font-family: var(--font-mono); color: var(--lavender-milk); margin-bottom: var(--space-md); font-size: var(--text-lg);">03 / 科学验证：双重校验体系</h3>
+            <p style="max-width: 70ch; color: var(--text-charcoal); line-height: 1.9; margin-bottom: var(--space-md);">
+                项目采用<strong style="color: var(--lavender-milk);">定量统计 + 定性评估</strong>的双重校验路径。在定量维度，通过<span class="highlight-data">结构方程模型 (SEM)</span>和<span style="color: var(--mint-ice); font-weight: 600;">因子分析</span>验证系统指标与标准量表间的高效映射，并通过<span style="color: var(--mint-ice); font-weight: 600;">重测信度</span>确保测量结果跨时间的一致性。
+            </p>
+            <p style="max-width: 70ch; color: var(--text-sage); line-height: 1.8;">
+                在定性维度，引入<span style="color: var(--peach-mousse); font-weight: 600;">心理学专家评审</span>与<span style="color: var(--peach-mousse); font-weight: 600;">深度用户访谈</span>，多视角验证了虚拟情境的生态代表性与受测者在中高压力任务下的真实沉浸感。
+            </p>
+        </div>
+    </div>
+</section>
+
+<section id="innovations" class="ladder-section" style="background: var(--bg-cream);">
+    <div class="section-header">
+        <span class="hero-label">Core Innovations</span>
+        <h2>核心创新点</h2>
+        <p>三大技术突破，重构社交焦虑测评范式</p>
+    </div>
+    
+    <div class="innovation-cards" style="display: flex; gap: var(--space-lg); max-width: 1100px; margin: 0 auto;">
+        <!-- 01 多模态融合 -->
+        <div class="innovation-card" style="flex: 1; background: var(--bg-marshmallow); border: 3px solid var(--border-almond); border-radius: 20px; padding: var(--space-xl); box-shadow: 6px 6px 0 0 var(--mint-ice); transition: 0.4s var(--ease-out);">
+            <div style="font-family: var(--font-mono); font-size: var(--text-2xl); color: var(--mint-ice); margin-bottom: var(--space-md);">01</div>
+            <h3 style="font-size: var(--text-xl); margin-bottom: var(--space-sm);">多模态数据融合</h3>
+            <p style="color: var(--text-sage); font-size: var(--text-sm); line-height: 1.7;">突破传统单一问卷局限，同步采集眼动轨迹、语音特征、生理指标与行为数据，构建立体化评估矩阵。</p>
+        </div>
+        
+        <!-- 02 严肃游戏 -->
+        <div class="innovation-card" style="flex: 1; background: var(--bg-marshmallow); border: 3px solid var(--border-almond); border-radius: 20px; padding: var(--space-xl); box-shadow: 6px 6px 0 0 var(--peach-mousse); transition: 0.4s var(--ease-out);">
+            <div style="font-family: var(--font-mono); font-size: var(--text-2xl); color: var(--peach-mousse); margin-bottom: var(--space-md);">02</div>
+            <h3 style="font-size: var(--text-xl); margin-bottom: var(--space-sm);">严肃游戏载体</h3>
+            <p style="color: var(--text-sage); font-size: var(--text-sm); line-height: 1.7;">以游戏化交互降低被测者防御心理，在沉浸式虚拟社交场景中捕捉真实应激反应，提升生态效度。</p>
+        </div>
+        
+        <!-- 03 闭环干预 -->
+        <div class="innovation-card" style="flex: 1; background: var(--bg-marshmallow); border: 3px solid var(--border-almond); border-radius: 20px; padding: var(--space-xl); box-shadow: 6px 6px 0 0 var(--lavender-milk); transition: 0.4s var(--ease-out);">
+            <div style="font-family: var(--font-mono); font-size: var(--text-2xl); color: var(--lavender-milk); margin-bottom: var(--space-md);">03</div>
+            <h3 style="font-size: var(--text-xl); margin-bottom: var(--space-sm);">测量即干预</h3>
+            <p style="color: var(--text-sage); font-size: var(--text-sm); line-height: 1.7;">首创测评-干预闭环设计，实时反馈调节策略，将传统诊断工具转化为个性化心理健康管理平台。</p>
+        </div>
+    </div>
+</section>
+
+<section id="architecture" class="data-section" style="background: var(--bg-marshmallow);">
+    <div class="data-sticky">
+        <span class="hero-label">System Architecture</span>
+        <h2>系统架构<br>与技术路线</h2>
+        <p>分层模块化设计，实现数据采集、分析与干预的一体化协同。</p>
+    </div>
+    <div class="data-scroll" style="background: var(--bg-cream);">
+        <div class="data-visual-box">
+            <h3>🧩 技术架构总览</h3>
+            <img class="data-img" src="image/基于严肃游戏的社交焦虑测评干预系统技术架构总览-更新.jpg" alt="系统技术架构">
+            <p>前端交互层、数据采集层、算法分析层与干预反馈层的四层架构设计。</p>
+        </div>
+    </div>
+</section>
+
+
+<section id="ladder" class="ladder-section">
+    <div class="section-header">
+        <h2>视觉场景 · 压力梯度</h2>
+        <p>通过渐进暴露的脱敏范式构建阶梯式社交测量环境</p>
+    </div>
+
+    <div class="ladder-grid">
+        <div class="flow-dot"></div>
+
+        <div class="ladder-row">
+            <div class="stage-info">
+                <div class="stage-badge">00</div>
+                <h3>静息基线 · 校准训练</h3>
+                <p>确立个体的注视点基本特征，排除设备误差。在无压力状态下进行视觉注意力的标准化采集。</p>
+                <span class="stage-tag" style="color: var(--mint-ice);">Calibration & Baseline</span>
+            </div>
+            <div class="stage-image-container">
+                <img class="stage-img" src="image/图4 眼动追踪校准训练界面.png" alt="眼动校准">
+            </div>
+        </div>
+
+        <div class="ladder-row">
+            <div class="stage-info">
+                <div class="stage-badge">01</div>
+                <h3>基础社交 · 初步选择</h3>
+                <p>低唤醒社交场景，测试受测者在日常简单互动中的视觉分配偏向与首个动作反应。</p>
+                <span class="stage-tag" style="color: var(--lemon-sherbet);">Basic Social Selection</span>
+            </div>
+            <div class="stage-image-container">
+                <img class="stage-img" src="image/图6 场景一：基础社交选择.png" alt="基础社交">
+            </div>
+        </div>
+
+        <div class="ladder-row">
+            <div class="stage-info">
+                <div class="stage-badge">02</div>
+                <h3>进阶互动 · 关系试探</h3>
+                <p>场景复杂度提升，引入更多社交线索。观察受测者在非结构化对话中的回避频率。</p>
+                <span class="stage-tag" style="color: var(--peach-mousse);">Advanced Interaction</span>
+            </div>
+            <div class="stage-image-container">
+                <img class="stage-img" src="image/图8 场景二：进阶社交互动选择.png" alt="进阶社交1">
+            </div>
+        </div>
+
+        <div class="ladder-row">
+            <div class="stage-info">
+                <div class="stage-badge">03</div>
+                <h3>动态决策 · 互动深化</h3>
+                <p>模拟连续社交任务。当互动进入深层阶段，个体的认知负荷与社交焦虑特征开始显现。</p>
+                <span class="stage-tag" style="color: var(--peach-mousse);">Deepening Interaction</span>
+            </div>
+            <div class="stage-image-container">
+                <img class="stage-img" src="image/图10 场景三：进阶社交互动选择.png" alt="进阶社交2">
+            </div>
+        </div>
+
+        <div class="ladder-row">
+            <div class="stage-info">
+                <div class="stage-badge">04</div>
+                <h3>公开演讲 · 评价恐惧</h3>
+                <p>典型高压场景。在被注视的压力下，个体的生理唤醒与视觉回避达到峰值。</p>
+                <span class="stage-tag" style="color: var(--lavender-milk);">Public Speaking Stress</span>
+            </div>
+            <div class="stage-image-container">
+                <img class="stage-img" src="image/图13 场景四：公开演讲（高压力社交互动结果呈现）.png" alt="公开演讲">
+            </div>
+        </div>
+
+        <div class="ladder-row">
+            <div class="stage-info">
+                <div class="stage-badge">05</div>
+                <h3>群体竞争 · 任务博弈</h3>
+                <p>在多人竞争环境下，测试个体的社会排斥感与竞争焦虑，量化行为决策。</p>
+                <span class="stage-tag" style="color: var(--lavender-milk);">Group Competition</span>
+            </div>
+            <div class="stage-image-container">
+                <img class="stage-img" src="image/图15 场景五：群体任务竞争（高压力社交互动结果呈现）.png" alt="群体竞争">
+            </div>
+        </div>
+
+        <div class="ladder-row">
+            <div class="stage-info">
+                <div class="stage-badge">06</div>
+                <h3>社交邀约 · 最终抉择</h3>
+                <p>最高压力的社交决策。面对被拒绝的风险，个体的防御机制与调节能力得到最终评估。</p>
+                <span class="stage-tag" style="color: var(--mint-ice);">Social Invitation</span>
+            </div>
+            <div class="stage-image-container">
+                <img class="stage-img" src="image/图16 场景六：社交邀约（高压力社交互动选择）.png" alt="社交邀约">
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="data" class="data-section">
+    <div class="data-sticky">
+        <h2>多模态<br>数据分析报告</h2>
+        <p>通过阶梯获取的行为样本将被汇总为可视化的专业报告。</p>
+    </div>
+    <div class="data-scroll">
+        <!-- 1. 眼动热力图 -->
+        <div class="data-visual-box">
+            <h3>眼动热力图 (Heatmap)</h3>
+            <img class="data-img" src="image/24眼动数据注视热力图.png" alt="眼动热力图">
+            <p>分析个体在不同压力阶段对面部特征的回避倾向。</p>
+        </div>
+        
+        <!-- 2. 社交焦虑总分 -->
+        <div class="data-visual-box">
+            <h3>社交焦虑 · 综合得分</h3>
+            <img class="data-img" src="image/图18 结果界面：社交焦虑总分.png" alt="社交焦虑总分">
+            <p>基于阶梯表现的社交焦虑综合评估，量化个体的应激水平。</p>
+        </div>
+        
+        <!-- 3. 社交能力维度雷达图 -->
+        <div class="data-visual-box">
+            <h3>社交能力 · 多维雷达</h3>
+            <img class="data-img" src="image/19结果界面：社交能力维度雷达图.png" alt="社交能力维度雷达图">
+            <p>基于游戏表现自动生成的五大社交维度评估。</p>
+        </div>
+        
+        <!-- 4. 情绪变化分析图表（情绪动力学曲线） -->
+        <div class="data-visual-box">
+            <h3>情绪动力学 · 连续变化</h3>
+            <img class="data-img" src="image/结果界面：情绪变化分析图表.png" alt="情绪变化分析图表">
+            <p>追踪社交决策全过程的情绪反应动态，Stage 4~5 出现明显峰值。</p>
+        </div>
+        
+        <!-- 5. 情绪强度与占比柱状图 -->
+        <div class="data-visual-box">
+            <h3>情绪强度 · 占比分析</h3>
+            <img class="data-img" src="image/21结果界面：情绪强度与占比柱状图.png" alt="情绪强度与占比柱状图">
+            <p>各阶梯阶段下不同情绪类型的强度分布与相对占比。</p>
+        </div>
+    </div>
+</section>
+
+<section id="demo" class="demo-section">
+    <div class="demo-container">
+        <div class="demo-header">
+            <span class="badge">System Demo</span>
+            <h2>演示：基于严肃游戏的测评干预系统</h2>
+            <p>点击下方视频，观看系统的完整多模态交互流程与干预逻辑演示。</p>
+        </div>
+        
+        <div class="video-wrapper">
+            <video controls poster="image/图片1-网站封面.png" preload="metadata">
+                <source src="video/基于严肃游戏的青少年社交焦虑测评干预系统.mp4" type="video/mp4">
+                您的浏览器不支持视频播放。
+            </video>
+            
+          
+        </div>
+    </div>
+</section>
+
+<style>
+    /* 针对视频封面的样式微调 */
+    video {
+        width: 100%;
+        border-radius: 20px;
+        background: var(--bg-marshmallow); /* 封面加载前的底色 */
+        display: block;
+        box-shadow: 0 4px 20px rgba(157, 198, 184, 0.15); /* 带有薄荷绿调的投影 */
+        object-fit: cover; /* 确保封面图填满容器且不变形 */
+        cursor: pointer;
+    }
+
+
+    .info-item .label {
+        font-family: var(--font-mono);
+        font-size: var(--text-xs);
+        color: var(--mint-ice); /* 标签改为薄荷色 */
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+        margin-bottom: var(--space-xs);
+        display: block;
+    }
+
+    .info-item .val {
+        font-size: var(--text-sm);
+        font-weight: 500;
+        color: var(--text-sage);
+    }
+</style>
+<footer>
+    <div> 2026 穿过长廊回声 · 青少年社交焦虑研究项目</div>
+    <div class="footer-version">MARSHMALLOW SYSTEM V2.5</div>
+</footer>
+
+<script>
+    /**
+     * WebGL 脉冲网格背景 (Three.js)
+     */
+    const container = document.getElementById('webgl-bg');
+    let scene, camera, renderer, planeMesh;
+    const mouse = { x: 0, y: 0 };
+
+    function initWebGL() {
+        scene = new THREE.Scene();
+        camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.z = 5;
+
+        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+
+        // 创建网格几何体 (增加分段数以获得平滑波动)
+        const geometry = new THREE.PlaneGeometry(20, 20, 50, 50);
+        
+        // 使用 PointsMaterial 营造"数据脉冲"感 - 使用主题色 mint-ice
+        const material = new THREE.PointsMaterial({
+            color: 0x0FF0FE,
+            size: 0.06,
+            transparent: true,
+            opacity: 0.4,
+            sizeAttenuation: true
+        });
+
+        planeMesh = new THREE.Points(geometry, material);
+        planeMesh.rotation.x = -Math.PI / 3;
+        scene.add(planeMesh);
+
+        // 鼠标交互
+        window.addEventListener('mousemove', onMouseMove);
+        window.addEventListener('resize', onResize);
+
+        animate();
+    }
+
+    function onMouseMove(event) {
+        // 归一化鼠标坐标 (-1 到 1)
+        mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    }
+
+    function onResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    function animate() {
+        requestAnimationFrame(animate);
+        
+        const time = Date.now() * 0.001;
+        const positions = planeMesh.geometry.attributes.position.array;
+
+        // 脉冲算法：通过正弦函数控制顶点高度，加入鼠标扰动
+        for (let i = 0; i < positions.length; i += 3) {
+            const x = positions[i];
+            const y = positions[i + 1];
+            
+            // 基于距离中心点的距离产生涟漪脉冲
+            const dist = Math.sqrt(x * x + y * y);
+            
+            // 鼠标扰动 - 计算顶点与鼠标投影位置的距离
+            const mouseInfluenceX = x - mouse.x * 5;
+            const mouseInfluenceY = y - mouse.y * 5;
+            const mouseDist = Math.sqrt(mouseInfluenceX * mouseInfluenceX + mouseInfluenceY * mouseInfluenceY);
+            const mouseEffect = Math.max(0, 1 - mouseDist / 3) * 0.3;
+            
+            // 组合波动：基础脉冲 + 鼠标扰动
+            positions[i + 2] = Math.sin(dist - time * 1.5) * 0.3 + Math.sin(dist * 0.5 + time) * 0.15 + mouseEffect;
+        }
+        
+        planeMesh.geometry.attributes.position.needsUpdate = true;
+        
+        // 缓慢旋转增加动态感
+        planeMesh.rotation.z = Math.sin(time * 0.1) * 0.05;
+        
+        renderer.render(scene, camera);
+    }
+
+    initWebGL();
+
+    /**
+     * 滚动交错显现与数据卡片动效
+     */
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry, i) => {
+            if (entry.isIntersecting) {
+                // 阶梯交错滑入 (间隔0.08s)
+                setTimeout(() => {
+                    entry.target.classList.add('visible');
+                }, i * 80);
+            }
+        });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.ladder-row').forEach(row => observer.observe(row));
+
+    const dataObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('drawn');
+            }
+        });
+    }, { threshold: 0.3 });
+
+    document.querySelectorAll('.data-visual-box').forEach(box => dataObserver.observe(box));
+
+    // 观察新添加的板块
+    document.querySelectorAll('.logic-step, .part1-intro, .innovation-card, .app-row').forEach(el => observer.observe(el));
+</script>
+
+</body>
+</html>
